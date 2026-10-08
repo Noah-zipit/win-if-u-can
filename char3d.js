@@ -52,6 +52,10 @@ function setupModel(obj) {
   });
 
   // ---- normalize: feet at y=0, target height ~112 CSS px ----
+  // The FBX arrives upside-down (head at -Y); flip it 180° about the camera
+  // axis (Z) so up is up while keeping it facing +Z (toward the camera).
+  obj.rotation.z = Math.PI;
+  obj.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(obj);
   const size = box.getSize(new THREE.Vector3());
   if (!size.y || size.y <= 0) { fail(); return; }
