@@ -3,36 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0b0b2a">
-<title>WIN IF U CAN — the hardest 2D platformer on your phone</title>
-<meta name="description" content="WIN IF U CAN: an extremely hard but beatable 2D platformer. Precision jumps, moving platforms, stompable enemies. Built with Phaser 3 and Kenney art (CC0).">
+<meta name="theme-color" content="#0a0506">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>WIN IF U CAN — escape hell. if u can.</title>
+<meta name="description" content="WIN IF U CAN: an extremely hard but beatable 2D platformer set in hell. Precision jumps, moving platforms, stompable hellspawn. Built with Phaser 3, Three.js and CC0 art (Kenney, Quaternius).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
-    width: 100%; height: 100%;
-    background: #0b0b2a;
+    width: 100%; height: 100vh; height: 100dvh;
+    background: #0a0506;
     overflow: hidden;
     touch-action: none;
     overscroll-behavior: none;
     font-family: Verdana, sans-serif;
     -webkit-user-select: none; user-select: none;
     -webkit-tap-highlight-color: transparent;
+    position: fixed; inset: 0;
   }
   #game-container {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
   }
-  #game-container canvas { touch-action: none; }
+  #game-container canvas { touch-action: none; display: block; }
 
-  /* ---- portrait: rotate-your-device overlay (landscape-first game) ---- */
+  /* ============ DOM touch controls (mobile-first, bulletproof) ============ */
+  #touch-controls {
+    position: fixed; inset: 0; z-index: 5000;
+    pointer-events: none; display: none;
+  }
+  body.touch #touch-controls { display: block; }
+  body.touch.on-title #touch-controls { display: none; }
+  @media (orientation: portrait) {
+    #touch-controls { display: none !important; }
+  }
+  .tbtn {
+    position: fixed; pointer-events: auto;
+    width: 92px; height: 92px; border-radius: 50%;
+    border: 3px solid rgba(255, 150, 80, 0.65);
+    background: radial-gradient(circle at 35% 30%, rgba(255,130,60,0.38), rgba(110,12,8,0.55));
+    box-shadow: 0 0 18px rgba(255,80,20,0.55), inset 0 0 22px rgba(255,60,10,0.35);
+    color: #ffd9b0; font-size: 32px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+    cursor: pointer; padding: 0;
+    transition: transform 0.06s ease-out, box-shadow 0.06s ease-out;
+  }
+  .tbtn.active {
+    transform: scale(1.14);
+    border-color: rgba(255, 200, 120, 0.95);
+    background: radial-gradient(circle at 35% 30%, rgba(255,170,90,0.75), rgba(160,25,10,0.8));
+    box-shadow: 0 0 34px rgba(255,120,30,0.95), inset 0 0 26px rgba(255,120,40,0.6);
+    color: #fff3e0;
+  }
+  #btn-left  { left: max(18px, env(safe-area-inset-left)); bottom: calc(22px + env(safe-area-inset-bottom)); }
+  #btn-right { left: calc(max(18px, env(safe-area-inset-left)) + 110px); bottom: calc(22px + env(safe-area-inset-bottom)); }
+  #btn-jump  {
+    right: max(20px, env(safe-area-inset-right)); bottom: calc(18px + env(safe-area-inset-bottom));
+    width: 106px; height: 106px; font-size: 16px; font-family: 'Bungee', sans-serif;
+    letter-spacing: 1px;
+  }
+  .tbtn .lbl { pointer-events: none; text-shadow: 0 2px 6px #000; }
+
+  /* ============ fullscreen toggle ============ */
+  #fs-btn {
+    position: fixed; z-index: 5001;
+    top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right));
+    width: 44px; height: 44px; border-radius: 12px;
+    border: 2px solid rgba(255,150,80,0.5);
+    background: rgba(20,8,6,0.55); color: #ffb37a; font-size: 20px;
+    display: none; align-items: center; justify-content: center;
+    touch-action: none; cursor: pointer;
+  }
+  body.touch #fs-btn { display: flex; }
+
+  /* ============ portrait: rotate-your-device overlay (hell styled) ============ */
   #rotate-overlay {
     display: none;
     position: fixed; inset: 0; z-index: 9999;
-    background: radial-gradient(circle at 50% 35%, #27348f 0%, #0b0b2a 75%);
+    background: radial-gradient(circle at 50% 70%, #4a0e06 0%, #0a0506 75%);
     flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 24px;
   }
@@ -41,14 +101,15 @@
   }
   #rotate-overlay .phone {
     width: 74px; height: 128px;
-    border: 5px solid #fff; border-radius: 12px;
+    border: 5px solid #ff5a1a; border-radius: 12px;
+    box-shadow: 0 0 24px rgba(255,60,10,0.6);
     position: relative; margin-bottom: 28px;
     animation: tilt 1.8s ease-in-out infinite;
   }
   #rotate-overlay .phone::after {
     content: ''; position: absolute; left: 50%; bottom: 8px;
     width: 10px; height: 10px; margin-left: -5px;
-    border-radius: 50%; background: #fff;
+    border-radius: 50%; background: #ff5a1a;
   }
   @keyframes tilt {
     0%, 20% { transform: rotate(0deg); }
@@ -56,23 +117,93 @@
     100% { transform: rotate(-90deg); }
   }
   #rotate-overlay h1 {
-    font-family: 'Bungee', sans-serif; color: #ffd60a;
+    font-family: 'Bungee', sans-serif; color: #ff3d12;
     font-size: 30px; letter-spacing: 1px; margin-bottom: 12px;
-    text-shadow: 0 4px 0 #7b2d00;
+    text-shadow: 0 0 18px rgba(255,40,10,0.8), 0 4px 0 #000;
   }
-  #rotate-overlay p { color: #caf0f8; font-size: 16px; line-height: 1.6; max-width: 320px; }
+  #rotate-overlay p { color: #e8a37a; font-size: 16px; line-height: 1.6; max-width: 320px; }
 </style>
 </head>
 <body>
   <div id="game-container"></div>
 
+  <!-- touch controls: DOM buttons (reliable multi-touch, independent of canvas input) -->
+  <div id="touch-controls">
+    <button class="tbtn" id="btn-left" aria-label="move left"><span class="lbl">◀</span></button>
+    <button class="tbtn" id="btn-right" aria-label="move right"><span class="lbl">▶</span></button>
+    <button class="tbtn" id="btn-jump" aria-label="jump"><span class="lbl">JUMP</span></button>
+  </div>
+  <button id="fs-btn" aria-label="toggle fullscreen">⛶</button>
+
   <div id="rotate-overlay">
     <div class="phone"></div>
     <h1>ROTATE YOUR DEVICE</h1>
-    <p>WIN IF U CAN is a landscape game.<br>Turn your phone sideways to play.</p>
+    <p>Hell is a landscape game.<br>Turn your phone sideways to descend.</p>
   </div>
 
   <script src="level.js"></script>
   <script src="game.js"></script>
+  <script type="module" src="char3d.js"></script>
+  <script>
+  /* DOM wiring: touch buttons + fullscreen. The Phaser scene registers
+     window.WIUCInput when it boots; handlers look it up at event time. */
+  (function () {
+    function markTouch() {
+      if (!document.body.classList.contains('touch')) document.body.classList.add('touch');
+    }
+    if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) markTouch();
+    window.addEventListener('touchstart', markTouch, { passive: true });
+    window.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch') markTouch();
+    }, { passive: true });
+
+    function input() { return window.WIUCInput || null; }
+    function bindBtn(id, down, up) {
+      var el = document.getElementById(id);
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        el.classList.add('active');
+        try { if (navigator.vibrate) navigator.vibrate(8); } catch (x) {}
+        try { if (window.SFX && window.SFX.init) window.SFX.init(); } catch (x) {}
+        var w = input(); if (w) down(w);
+      });
+      var release = function (e) {
+        if (e) e.preventDefault();
+        el.classList.remove('active');
+        var w = input(); if (w) up(w);
+      };
+      el.addEventListener('pointerup', release);
+      el.addEventListener('pointercancel', release);
+      el.addEventListener('pointerleave', function (e) {
+        if (el.classList.contains('active')) release(e);
+      });
+      el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    }
+    bindBtn('btn-left',
+      function (w) { w.left(true); },
+      function (w) { w.left(false); });
+    bindBtn('btn-right',
+      function (w) { w.right(true); },
+      function (w) { w.right(false); });
+    bindBtn('btn-jump',
+      function (w) { w.jump(); },
+      function (w) {});
+    var layer = document.getElementById('touch-controls');
+    layer.addEventListener('touchstart', function (e) { e.preventDefault(); }, { passive: false });
+    layer.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+    document.getElementById('fs-btn').addEventListener('click', function () {
+      try {
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else {
+          var p = document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+          if (p && p.catch) p.catch(function () { document.documentElement.requestFullscreen(); });
+        }
+      } catch (e) {
+        try { document.documentElement.requestFullscreen(); } catch (x) {}
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
