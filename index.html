@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b2a">
+<title>WIN IF U CAN — the hardest 2D platformer on your phone</title>
+<meta name="description" content="WIN IF U CAN: an extremely hard but beatable 2D platformer. Precision jumps, moving platforms, stompable enemies. Built with Phaser 3 and Kenney art (CC0).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #0b0b2a;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: none;
+    font-family: Verdana, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #game-container {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #game-container canvas { touch-action: none; }
+
+  /* ---- portrait: rotate-your-device overlay (landscape-first game) ---- */
+  #rotate-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: radial-gradient(circle at 50% 35%, #27348f 0%, #0b0b2a 75%);
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  @media (orientation: portrait) {
+    #rotate-overlay { display: flex; }
+  }
+  #rotate-overlay .phone {
+    width: 74px; height: 128px;
+    border: 5px solid #fff; border-radius: 12px;
+    position: relative; margin-bottom: 28px;
+    animation: tilt 1.8s ease-in-out infinite;
+  }
+  #rotate-overlay .phone::after {
+    content: ''; position: absolute; left: 50%; bottom: 8px;
+    width: 10px; height: 10px; margin-left: -5px;
+    border-radius: 50%; background: #fff;
+  }
+  @keyframes tilt {
+    0%, 20% { transform: rotate(0deg); }
+    55%, 80% { transform: rotate(-90deg); }
+    100% { transform: rotate(-90deg); }
+  }
+  #rotate-overlay h1 {
+    font-family: 'Bungee', sans-serif; color: #ffd60a;
+    font-size: 30px; letter-spacing: 1px; margin-bottom: 12px;
+    text-shadow: 0 4px 0 #7b2d00;
+  }
+  #rotate-overlay p { color: #caf0f8; font-size: 16px; line-height: 1.6; max-width: 320px; }
+</style>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <div id="rotate-overlay">
+    <div class="phone"></div>
+    <h1>ROTATE YOUR DEVICE</h1>
+    <p>WIN IF U CAN is a landscape game.<br>Turn your phone sideways to play.</p>
+  </div>
+
+  <script src="level.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
